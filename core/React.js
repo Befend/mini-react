@@ -21,13 +21,13 @@ function createElement(type, props, ...children) {
 }
 
 //  下一个工作单元 (fiber结构)
-let nextWorkOfUnit = null
+let nextUnitOfWork = null
 
 //  开启任务调度
 requestIdleCallback(workLoop)
 
 function render(el, container) {
-	nextWorkOfUnit = {
+	nextUnitOfWork = {
 		dom: container,
 		props: {
 			children: [el],
@@ -54,8 +54,8 @@ function render(el, container) {
 function workLoop(deadline) {
 	//  是否中断
 	let shouldYeild = false
-	while (!shouldYeild && nextWorkOfUnit) {
-		nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit)
+	while (!shouldYeild && nextUnitOfWork) {
+		nextUnitOfWork = performWorkOfUnit(nextUnitOfWork)
 		shouldYeild = deadline.timeRemaining() < 1
 	}
 	//  任务放到下次执行
