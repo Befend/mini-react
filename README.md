@@ -32,3 +32,11 @@
 
 1. 实现统一提交
    如果中途有可能没空余时间用户会看到渲染一半的 dom，那么就利用计算结束后统一添加到屏幕里
+
+2. 实现 function component
+
+- fiber.type()返回的是 vDom
+- 由于返回的是个 element 数据 children 为 element[]需要套上处理成数组
+- 没有 vDom 属性得继续向上查找
+- fiber.props
+- 处理 child 为 string | number 类型
