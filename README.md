@@ -62,6 +62,7 @@
 ## day05
 
 1. 实现事件绑定
+   判断节点的属性是否以 on 开始的，截取并绑定在 dom 的 addEventListener 上
 
 2. 实现 props
    对比 new tree 和 old tree？如何找到老节点？如何 diff dom
