@@ -1,8 +1,19 @@
 import React from "./core/React.js";
 // const App = React.createElement("div", { id: "app" }, "hello world, my mini react!");
-
+let count = 16
+let props = { id: "11111111" }
 function Counter({num}) {
-  return <div>count:{num}</div>
+  function handleClick() {
+    console.log("click", count);
+    count++
+    props = {}
+    React.update()
+  }
+  return (
+    <div {...props}>count:{count}
+      <button onClick={handleClick}>click</button>
+    </div>
+  )
 }
 
 function CounterContainer() {
@@ -13,9 +24,9 @@ function App() {
   return (
     <div>
       hello world, my mini react!
-      <Counter num={20}></Counter>
       <CounterContainer></CounterContainer>
       <div>befend</div>
+      <Counter num={20}></Counter>
     </div>
   )
 }

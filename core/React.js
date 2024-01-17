@@ -22,18 +22,20 @@ function createElement(type, props, ...children) {
 	}
 }
 
+// work in progress
+let wipRoot = null
+let currentRoot = null
 //  下一个工作单元 (fiber结构)
 let nextUnitOfWork = null
-let root = null
 
 function render(el, container) {
-	nextUnitOfWork = {
+	wipRoot = {
 		dom: container,
 		props: {
 			children: [el],
 		},
 	}
-	root = nextUnitOfWork
+	nextUnitOfWork = wipRoot
 }
 
 function createDom(type) {
@@ -42,41 +44,78 @@ function createDom(type) {
 		: document.createElement(type)
 }
 
-function updateProps(dom, props) {
-	Object.keys(props).forEach((key) => {
+function updateProps(dom, nextProps, prevProps) {
+	// 1. old有，new无，删除节点
+	Object.keys(prevProps).forEach((key) => {
 		if (key !== "children") {
-			dom[key] = props[key]
+			if (!(key in nextProps)) {
+				dom.removeAttribute(key)
+			}
+		}
+	})
+	// 2. old无，new有，添加节点
+	// 3. old有，new有，修改节点
+	Object.keys(nextProps).forEach((key) => {
+		if (key !== "children") {
+			if (nextProps[key] !== prevProps[key]) {
+				if (/^on/.test(key)) {
+					const eventType = key.substring(2).toLocaleLowerCase()
+					dom.removeEventListener(eventType, prevProps[key])
+					dom.addEventListener(eventType, nextProps[key])
+				} else {
+					dom[key] = nextProps[key]
+				}
+			}
 		}
 	})
 }
 
-function initChildren(fiber, children) {
+function reconcileChildren(fiber, children) {
 	// const children = fiber.props.children
-	let prevFiber = null
+	let oldFiber = fiber.alternate?.child
+	let prevChild = null
 	children.forEach((child, index) => {
-		const newFiber = {
-			type: child.type,
-			props: child.props,
-			child: null,
-			parent: fiber,
-			sibling: null,
-			dom: null,
+		const isSameType = oldFiber && oldFiber.type === child.type
+		let newFiber
+		if (isSameType) {
+			newFiber = {
+				type: child.type,
+				props: child.props,
+				child: null,
+				parent: fiber,
+				sibling: null,
+				dom: oldFiber.dom,
+				effectTag: "update",
+				alternate: oldFiber,
+			}
+		} else {
+			newFiber = {
+				type: child.type,
+				props: child.props,
+				child: null,
+				parent: fiber,
+				sibling: null,
+				dom: null,
+				effectTag: "placement",
+			}
+		}
+		if (oldFiber) {
+			oldFiber = oldFiber.sibling
 		}
 
 		if (index === 0) {
 			fiber.child = newFiber
 		} else {
-			prevFiber.sibling = newFiber
+			prevChild.sibling = newFiber
 		}
-
-		prevFiber = newFiber
+		prevChild = newFiber
 	})
 }
 
 function updateFunctionComponent(fiber) {
 	const children = [fiber.type(fiber.props)]
 	// 3. 转换链表，设置好指针
-	initChildren(fiber, children)
+	reconcileChildren(fiber, children)
 }
 
 function updateHostComponent(fiber) {
@@ -84,12 +123,12 @@ function updateHostComponent(fiber) {
 		// 1. 创建dom
 		const dom = (fiber.dom = createDom(fiber.type))
 		// 2. 处理props
-		updateProps(dom, fiber.props)
+		updateProps(dom, fiber.props, {})
 	}
 
 	const children = fiber.props.children
 	// 3. 转换链表，设置好指针
-	initChildren(fiber, children)
+	reconcileChildren(fiber, children)
 }
 
 /**
@@ -125,7 +164,7 @@ function workLoop(deadline) {
 		shouldYeild = deadline.timeRemaining() < 1
 	}
 	// 统一提交
-	if (!nextUnitOfWork && root) {
+	if (!nextUnitOfWork && wipRoot) {
 		commitRoot()
 	}
 	//  任务放到下次执行
@@ -134,8 +173,9 @@ function workLoop(deadline) {
 
 function commitRoot() {
 	// 统一提交任务
-	commitWork(root.child)
-	root = null
+	commitWork(wipRoot.child)
+	currentRoot = wipRoot
+	wipRoot = null
 }
 
 // 提交任务
@@ -145,9 +185,14 @@ function commitWork(fiber) {
 	while (!fiberParent.dom) {
 		fiberParent = fiberParent.parent
 	}
-	if (fiber.dom) {
-		fiberParent.dom.append(fiber.dom)
+	if (fiber.effectTag === "update") {
+		updateProps(fiber.dom, fiber.props, fiber.alternate?.props)
+	} else if (fiber.effectTag === "placement") {
+		if (fiber.dom) {
+			fiberParent.dom.append(fiber.dom)
+		}
 	}
+
 	commitWork(fiber.child)
 	commitWork(fiber.sibling)
 }
@@ -155,9 +200,19 @@ function commitWork(fiber) {
 //  开启任务调度
 requestIdleCallback(workLoop)
 
+function update() {
+	wipRoot = {
+		dom: currentRoot.dom,
+		props: currentRoot.props,
+		alternate: currentRoot,
+	}
+	nextUnitOfWork = wipRoot
+}
+
 const React = {
 	render,
 	createElement,
+	update,
 }
 
 export default React
