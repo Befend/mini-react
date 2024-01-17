@@ -40,3 +40,32 @@
 - 没有 vDom 属性得继续向上查找
 - fiber.props
 - 处理 child 为 string | number 类型
+
+## day04
+
+阶段复习
+
+1. 初步实现 React 的 VDom 原理，初次接触 jsx 的语法
+
+2. 实现任务调度器和 fiber 架构
+
+- 实现递归创建 dom，大量数据时容易卡顿。
+- 采用 requestIdleCallback 分帧预算。
+- 把树结构转变成链表结构 child -> sibling -> parent
+
+3. 支持函数式组件
+
+- 需要区分 vdom 的 type 属性
+- 组件不需要创建 dom，调用 type 函数，将返回值作为 child
+- append 以及 查找组件的兄弟节点，需要递归查找
+
+## day05
+
+1. 实现事件绑定
+
+2. 实现 props
+   对比 new tree 和 old tree？如何找到老节点？如何 diff dom
+
+- new 没有， old 有，删除
+- new 有，old 没有，添加
+- new 有，old 有，更新
