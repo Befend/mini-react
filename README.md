@@ -3,6 +3,7 @@
 ### 目标
 
 掌握 React 基础知识和基本原理，实现一个简单的 mini react
+仓库链接：[https://github.com/Befend/mini-react](https://github.com/Befend/mini-react)
 
 ### 任务
 
@@ -75,5 +76,7 @@
 
 实现 diff 更新
 
-1. type 不一样时，删除旧的，创建新的
-2. 新的比老的短时，删除多余的节点
+1. type 不一样时，删除旧的，创建新的，使用 deletions 收集进行统一删除
+2. 新的比老的短时，删除多余的节点，用循环来处理 oldFiber，并且让 oldFiber 指向它的兄弟节点，直到删除完所有的节点
+3. 判断隐藏或显示组件
+4. 优化了更新组件，避免不需要更新的组件重复计算浪费资源，开始节点：updateFunctionComponent 的时候，把当前的节点赋值给 wipFiber 全局变量, update 的时候利用闭包的特性，把当前的节点赋值给存到 currentFiber 中，结束节点：判断下一个任务是不是兄弟节点
