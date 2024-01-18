@@ -27,6 +27,8 @@ let wipRoot = null
 let currentRoot = null
 //  下一个工作单元 (fiber结构)
 let nextUnitOfWork = null
+let deletions = []
+let wipFiber = null
 
 function render(el, container) {
 	wipRoot = {
@@ -89,15 +91,18 @@ function reconcileChildren(fiber, children) {
 				alternate: oldFiber,
 			}
 		} else {
-			newFiber = {
-				type: child.type,
-				props: child.props,
-				child: null,
-				parent: fiber,
-				sibling: null,
-				dom: null,
-				effectTag: "placement",
+			if (child) {
+				newFiber = {
+					type: child.type,
+					props: child.props,
+					child: null,
+					parent: fiber,
+					sibling: null,
+					dom: null,
+					effectTag: "placement",
+				}
 			}
+			oldFiber && deletions.push(oldFiber)
 		}
 		if (oldFiber) {
 			oldFiber = oldFiber.sibling
@@ -108,11 +113,19 @@ function reconcileChildren(fiber, children) {
 		} else {
 			prevChild.sibling = newFiber
 		}
-		prevChild = newFiber
+		if (newFiber) {
+			prevChild = newFiber
+		}
 	})
+
+	while (oldFiber) {
+		deletions.push(oldFiber)
+		oldFiber = oldFiber.sibling
+	}
 }
 
 function updateFunctionComponent(fiber) {
+	wipFiber = fiber
 	const children = [fiber.type(fiber.props)]
 	// 3. 转换链表，设置好指针
 	reconcileChildren(fiber, children)
@@ -161,6 +174,9 @@ function workLoop(deadline) {
 	let shouldYeild = false
 	while (!shouldYeild && nextUnitOfWork) {
 		nextUnitOfWork = performWorkOfUnit(nextUnitOfWork)
+		if (wipRoot?.sibling?.type === nextUnitOfWork?.type) {
+			nextUnitOfWork = undefined
+		}
 		shouldYeild = deadline.timeRemaining() < 1
 	}
 	// 统一提交
@@ -172,10 +188,24 @@ function workLoop(deadline) {
 }
 
 function commitRoot() {
+	deletions.forEach(commitDeletion)
 	// 统一提交任务
 	commitWork(wipRoot.child)
 	currentRoot = wipRoot
 	wipRoot = null
+	deletions = []
+}
+
+function commitDeletion(fiber) {
+	if (fiber.dom) {
+		let fiberParent = fiber.parent
+		while (!fiberParent.dom) {
+			fiberParent = fiberParent.parent
+		}
+		fiberParent.dom.removeChild(fiber.dom)
+	} else {
+		commitDeletion(fiber.child)
+	}
 }
 
 // 提交任务
@@ -201,12 +231,17 @@ function commitWork(fiber) {
 requestIdleCallback(workLoop)
 
 function update() {
-	wipRoot = {
-		dom: currentRoot.dom,
-		props: currentRoot.props,
-		alternate: currentRoot,
+	let currentFiber = wipFiber
+	return () => {
+		wipRoot = {
+			...currentFiber,
+			// dom: currentRoot.dom,
+			// props: currentRoot.props,
+			// alternate: currentRoot,
+			alternate: currentFiber,
+		}
+		nextUnitOfWork = wipRoot
 	}
-	nextUnitOfWork = wipRoot
 }
 
 const React = {
