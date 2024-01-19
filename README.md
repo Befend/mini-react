@@ -80,3 +80,14 @@
 2. 新的比老的短时，删除多余的节点，用循环来处理 oldFiber，并且让 oldFiber 指向它的兄弟节点，直到删除完所有的节点
 3. 判断隐藏或显示组件
 4. 优化了更新组件，避免不需要更新的组件重复计算浪费资源，开始节点：updateFunctionComponent 的时候，把当前的节点赋值给 wipFiber 全局变量, update 的时候利用闭包的特性，把当前的节点赋值给存到 currentFiber 中，结束节点：判断下一个任务是不是兄弟节点
+
+## day07
+
+1. 实现 useState
+   利用 currentFiber 的 stateHooks 收集 stateHook，其中 currentFiber 的 alternate 里的 stateHooks[stateHookIndex]为旧的 hooks
+
+2. 批量执行 action
+   利用 stateHook 的 queue 属性来收集 action，最后批量执行 action
+
+3. 提前检测，减少不必要的更新
+   设置 eagerState 前置求值，如果他的值和 stateHook.state 的值一样，就不更新了

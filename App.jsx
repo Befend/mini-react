@@ -131,6 +131,23 @@ function BarCounter() {
   )
 }
 
+function StateCounter() {
+  const [count, setCount] = React.useState(16)
+  const [bar, setBar] = React.useState('bar')
+  function handleClick() {
+    setCount(c => c + 1)
+    setBar('bar')
+  }
+  return (
+    <div>
+      <div>stateCounter</div>
+      <div>{count}</div>
+      <div>{bar}</div>
+      <button onClick={handleClick}>click</button>
+    </div>
+  )
+}
+
 function App() {
   return (
     <div>
@@ -140,9 +157,10 @@ function App() {
       {/* <CreateCounter/> */}
       {/* <DeleteCounter/> */}
       {/* <CaseCounter/> */}
-      <AppCounter/>
+      {/* <AppCounter/>
       <FooCounter/>
-      <BarCounter/>
+      <BarCounter/> */}
+      <StateCounter/>
     </div>
   )
 }

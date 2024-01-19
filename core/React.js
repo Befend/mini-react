@@ -125,6 +125,8 @@ function reconcileChildren(fiber, children) {
 }
 
 function updateFunctionComponent(fiber) {
+	stateHooks = []
+	stateHookIndex = 0
 	wipFiber = fiber
 	const children = [fiber.type(fiber.props)]
 	// 3. 转换链表，设置好指针
@@ -235,19 +237,62 @@ function update() {
 	return () => {
 		wipRoot = {
 			...currentFiber,
-			// dom: currentRoot.dom,
-			// props: currentRoot.props,
-			// alternate: currentRoot,
+			alternate: currentFiber,
+		}
+		// wipRoot = {
+		// 	dom: currentRoot.dom,
+		// 	props: currentRoot.props,
+		// 	alternate: currentRoot,
+		// }
+		nextUnitOfWork = wipRoot
+	}
+}
+
+// 收集所有stateHook
+let stateHooks = []
+let stateHookIndex = 0
+function useState(initial) {
+	let currentFiber = wipFiber
+	const oldHook = currentFiber.alternate?.stateHooks[stateHookIndex]
+	const stateHook = {
+		state: oldHook ? oldHook.state : initial,
+		queue: oldHook ? oldHook.queue : [],
+	}
+
+	stateHook.queue.forEach((action) => {
+		stateHook.state = action(stateHook.state)
+	})
+	stateHook.queue = []
+
+	stateHookIndex++
+	stateHooks.push(stateHook)
+	currentFiber.stateHooks = stateHooks
+
+	function setState(action) {
+		// 前置求值
+		const eagerState =
+			typeof action === "function" ? action(stateHook.state) : action
+		// 相同的话，返回
+		if (eagerState === stateHook.state) return
+
+		// 判断是否为函数类型，不是，则构造成函数
+		const action = typeof action === "function" ? action : () => action
+		stateHook.queue.push(action)
+
+		wipRoot = {
+			...currentFiber,
 			alternate: currentFiber,
 		}
 		nextUnitOfWork = wipRoot
 	}
+	return [stateHook.state, setState]
 }
 
 const React = {
 	render,
 	createElement,
 	update,
+	useState,
 }
 
 export default React
