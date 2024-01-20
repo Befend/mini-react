@@ -193,9 +193,11 @@ function commitRoot() {
 	deletions.forEach(commitDeletion)
 	// 统一提交任务
 	commitWork(wipRoot.child)
+	commitEffectHooks()
 	currentRoot = wipRoot
 	wipRoot = null
 	deletions = []
+	effectHooks = []
 }
 
 function commitDeletion(fiber) {
@@ -227,6 +229,36 @@ function commitWork(fiber) {
 
 	commitWork(fiber.child)
 	commitWork(fiber.sibling)
+}
+
+function commitEffectHooks() {
+	function run(fiber) {
+		if (!fiber) return
+		if (!fiber.alternate) {
+			// init
+			fiber.effectHooks?.forEach((hook) => {
+				hook.callback()
+			})
+		} else {
+			// update
+			// deps 有没有发生改变
+			fiber.effectHooks?.forEach((newHook, index) => {
+				if (newHook.deps.length > 0) {
+					const oldEffectHook = fiber.alternate?.effectHooks[index]
+
+					// some
+					const needUpate = oldEffectHook?.deps.some((oldDep, i) => {
+						return oldDep !== newHook.deps[i]
+					})
+
+					needUpate && newHook?.callback()
+				}
+			})
+		}
+		run(fiber.child)
+		run(fiber.sibling)
+	}
+	run(wipRoot)
 }
 
 //  开启任务调度
@@ -276,8 +308,8 @@ function useState(initial) {
 		if (eagerState === stateHook.state) return
 
 		// 判断是否为函数类型，不是，则构造成函数
-		const action = typeof action === "function" ? action : () => action
-		stateHook.queue.push(action)
+		const currentAction = typeof action === "function" ? action : () => action
+		stateHook.queue.push(currentAction)
 
 		wipRoot = {
 			...currentFiber,
@@ -288,11 +320,22 @@ function useState(initial) {
 	return [stateHook.state, setState]
 }
 
+let effectHooks = []
+function useEffect(callback, deps) {
+	const effectHook = {
+		callback,
+		deps,
+	}
+	effectHooks.push(effectHook)
+	wipFiber.effectHooks = effectHooks
+}
+
 const React = {
 	render,
 	createElement,
 	update,
 	useState,
+	useEffect,
 }
 
 export default React

@@ -131,13 +131,39 @@ function BarCounter() {
   )
 }
 
-function StateCounter() {
+function UseStateCounter() {
   const [count, setCount] = React.useState(16)
   const [bar, setBar] = React.useState('bar')
   function handleClick() {
     setCount(c => c + 1)
     setBar('bar')
   }
+  return (
+    <div>
+      <div>stateCounter</div>
+      <div>{count}</div>
+      <div>{bar}</div>
+      <button onClick={handleClick}>click</button>
+    </div>
+  )
+}
+
+function UseEffectCounter() {
+  const [count, setCount] = React.useState(16)
+  const [bar, setBar] = React.useState('bar')
+  function handleClick() {
+    setCount(c => c + 1)
+    setBar('bar')
+  }
+
+  React.useEffect(() => {
+    console.log('init');
+  }, [])
+
+  React.useEffect(() => {
+    console.log('update');
+  }, [count])
+
   return (
     <div>
       <div>stateCounter</div>
@@ -160,7 +186,8 @@ function App() {
       {/* <AppCounter/>
       <FooCounter/>
       <BarCounter/> */}
-      <StateCounter/>
+      {/* <UseStateCounter/> */}
+      <UseEffectCounter/>
     </div>
   )
 }
