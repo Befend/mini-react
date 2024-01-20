@@ -91,3 +91,19 @@
 
 3. 提前检测，减少不必要的更新
    设置 eagerState 前置求值，如果他的值和 stateHook.state 的值一样，就不更新了
+
+## day08
+
+1. 实现 useEffect
+
+- useEffect 是一个 hook 函数，它接收一个函数作为参数，并返回一个函数。
+- useEffect 调用的时机是在 React 完成对 DOM 的渲染之后，并且浏览器完成绘制之前。
+- useEffect 的第二个参数是依赖数组，不指定的时候副作用指挥在组件渲染后执行一次，如果指定了依赖数组，那么只有当依赖数组中的值发生变化时，副作用才会执行。
+- 通过 fiber.alternate 来判断是初始化还是更新，如果是更新则需要检测依赖项是否发生变化。利用 some 方法来判断依赖项是否发生变化。
+- 在 updateFuncionComponent 函数中初始化 effectHooks=[]
+- 利用 effectHooks 统一收集，最后批量执行 effectHook.callback
+
+2. 实现 cleanup，其作用是为了清空副作用
+
+cleanup 就是 effectHook 中的 callback 执行的时候，会先执行 cleanup 中的函数，然后执行 callback 中的函数,当 deps 为空的时候不会调用返回的 cleanup
+cleanup 的作用是为了清空副作用

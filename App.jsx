@@ -161,7 +161,17 @@ function UseEffectCounter() {
   }, [])
 
   React.useEffect(() => {
-    console.log('update');
+    console.log('update', count);
+    return () => {
+      console.log("cleanup 1");
+    }
+  }, [count])
+
+  React.useEffect(() => {
+    console.log('update', count);
+    return () => {
+      console.log("cleanup 2");
+    }
   }, [count])
 
   return (

@@ -126,6 +126,7 @@ function reconcileChildren(fiber, children) {
 
 function updateFunctionComponent(fiber) {
 	stateHooks = []
+	effectHooks = []
 	stateHookIndex = 0
 	wipFiber = fiber
 	const children = [fiber.type(fiber.props)]
@@ -197,7 +198,6 @@ function commitRoot() {
 	currentRoot = wipRoot
 	wipRoot = null
 	deletions = []
-	effectHooks = []
 }
 
 function commitDeletion(fiber) {
@@ -237,7 +237,7 @@ function commitEffectHooks() {
 		if (!fiber.alternate) {
 			// init
 			fiber.effectHooks?.forEach((hook) => {
-				hook.callback()
+				hook.cleanup = hook.callback()
 			})
 		} else {
 			// update
@@ -251,13 +251,28 @@ function commitEffectHooks() {
 						return oldDep !== newHook.deps[i]
 					})
 
-					needUpate && newHook?.callback()
+					needUpate && (newHook.cleanup = newHook?.callback())
 				}
 			})
 		}
 		run(fiber.child)
 		run(fiber.sibling)
 	}
+
+	function runCleanup(fiber) {
+		if (!fiber) return
+
+		fiber.alternate?.effectHooks?.forEach((hook) => {
+			if (hook.deps.length > 0) {
+				hook.cleanup && hook.cleanup()
+			}
+		})
+
+		runCleanup(fiber.child)
+		runCleanup(fiber.sibling)
+	}
+
+	runCleanup(wipRoot)
 	run(wipRoot)
 }
 
@@ -325,6 +340,7 @@ function useEffect(callback, deps) {
 	const effectHook = {
 		callback,
 		deps,
+		cleanup: undefined,
 	}
 	effectHooks.push(effectHook)
 	wipFiber.effectHooks = effectHooks
