@@ -8,6 +8,13 @@ function createTextNode(text) {
 	}
 }
 
+/**
+ * 实现 createElement 函数
+ * @param {*} type 元素的类型
+ * @param {*} props 元素的属性
+ * @param  {...any} children 元素的子元素
+ * @returns
+ */
 function createElement(type, props, ...children) {
 	return {
 		type,
@@ -30,6 +37,11 @@ let nextUnitOfWork = null
 let deletions = []
 let wipFiber = null
 
+/**
+ * render函数
+ * @param {*} el 要渲染的 VDOM 元素
+ * @param {*} container 要渲染到的实际 DOM 容器
+ */
 function render(el, container) {
 	wipRoot = {
 		dom: container,
